@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     private BoardManager m_Board;
 
     private Vector2Int m_CellPosition;
+    public Vector2Int Cell;
 
     private InputAction m_InputAction;
     private InputAction m_RestartAction;
@@ -38,6 +39,7 @@ public class PlayerController : MonoBehaviour
     public void MoveTo(Vector2Int cell, bool immediate)
     {
         m_CellPosition = cell;
+        Cell = m_CellPosition;
         if (immediate)
         {
             m_IsMoving = false;

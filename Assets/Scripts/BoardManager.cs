@@ -22,6 +22,7 @@ public class BoardManager : MonoBehaviour
     public int maxFoodCount;
     public WallObject[] WallPrefabs;
     public ExitCellObject ExitCellPrefab;
+    public Enemy EnemyPrefab;
 
     public PlayerController Player;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -60,6 +61,7 @@ public class BoardManager : MonoBehaviour
         
         GenerateWall();
         GenerateFood();
+        GenerateEnemy();
     }
 
     // Update is called once per frame
@@ -104,6 +106,20 @@ public class BoardManager : MonoBehaviour
             FoodObject food = FoodPrefabs[Random.Range(0, FoodPrefabs.Length)];
             FoodObject newFood = Instantiate(food);
             AddObject(newFood, coord);
+        }
+    }
+
+    void GenerateEnemy()
+    {
+        int enemyCount = Random.Range(2, 5);
+        for (int i = 0; i < enemyCount; ++i)
+        {
+            int randomIndex = Random.Range(0, m_EmptyCellsList.Count);
+            Vector2Int coord = m_EmptyCellsList[randomIndex];
+
+            m_EmptyCellsList.RemoveAt(randomIndex);
+            Enemy newEnemy = Instantiate(EnemyPrefab);
+            AddObject(newEnemy, coord);
         }
     }
     

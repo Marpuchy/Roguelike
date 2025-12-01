@@ -276,6 +276,7 @@ MonoBehaviour:
   - {fileID: 1864863706947226687, guid: 9dda91222bba5824fb75dc24e275193c, type: 3}
   - {fileID: 6473211224942159847, guid: d0403f944778f5446b069c518e49c42f, type: 3}
   ExitCellPrefab: {fileID: 7795086795932565705, guid: ba2b9b9c081eb824cbcd8d780de97f24, type: 3}
+  EnemyPrefab: {fileID: 966211648892414310, guid: a232b54a16f42acbca1e75cf4a45d39f, type: 3}
   Player: {fileID: 2047128601}
 --- !u!156049354 &1263079469
 Grid:
@@ -673,6 +674,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   MoveSpeed: 7
+  Cell: {x: 0, y: 0}
 --- !u!95 &2047128602
 Animator:
   serializedVersion: 7
