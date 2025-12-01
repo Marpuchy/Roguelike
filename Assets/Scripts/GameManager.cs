@@ -12,10 +12,12 @@ public class GameManager : MonoBehaviour
     public TurnManager TurnManager {get; private set;}
 
     public UIDocument UIDoc;
-    private Label m_FoodLabel;
-
-    private int m_FoodAmount = 100;
     
+    private Label m_FoodLabel;
+    private int m_FoodAmount = 10;
+    private int m_CurrentLevel = 1;
+    private VisualElement m_GameOverPanel;
+    private Label m_GameOverMessage;
     private void Awake()
     {
         if (Instance != null)
@@ -32,10 +34,13 @@ public class GameManager : MonoBehaviour
     {
         TurnManager = new TurnManager();
         TurnManager.OnTick += OnTurnHappen;
-        Board.Init();
-        Player.Spawn(Board, new Vector2Int(1,1));
+        NewLevel();
+        
+        m_GameOverPanel = UIDoc.rootVisualElement.Q<VisualElement>("GameOverPanel");
+        m_GameOverMessage = m_GameOverPanel.Q<Label>("GameOverMessage");
         m_FoodLabel = UIDoc.rootVisualElement.Q<Label>("FoodLabel");
-        m_FoodLabel.text = "Food : " + m_FoodAmount;
+        
+        StartNewGame();
     }
 
     // Update is called once per frame
@@ -53,5 +58,36 @@ public class GameManager : MonoBehaviour
     {
         m_FoodAmount += amount;
         m_FoodLabel.text = "Food : " + m_FoodAmount;
+
+        if (m_FoodAmount <= 0)
+        {
+            Player.GameOver();
+            m_GameOverPanel.style.visibility = Visibility.Visible;
+            m_GameOverMessage.text = "Game Over!\n\nYou traveled through " + m_CurrentLevel + " levels";
+        }
+    }
+
+    public void NewLevel()
+    {
+        Board.Clear();
+        Board.Init();
+        Player.Spawn(Board, new Vector2Int(1,1));
+        
+        m_CurrentLevel++;
+    }
+
+    public void StartNewGame()
+    {
+        m_GameOverPanel.style.visibility = Visibility.Hidden;
+        
+        m_CurrentLevel = 1;
+        m_FoodAmount = 10;
+        m_FoodLabel.text = "Food : " + m_FoodAmount;
+        
+        Board.Clear();
+        Board.Init();
+        
+        Player.Init();
+        Player.Spawn(Board, new Vector2Int(1,1));
     }
 }

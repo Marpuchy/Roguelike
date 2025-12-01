@@ -21,6 +21,7 @@ public class BoardManager : MonoBehaviour
     public int minFoodCount;
     public int maxFoodCount;
     public WallObject[] WallPrefabs;
+    public ExitCellObject ExitCellPrefab;
 
     public PlayerController Player;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -52,6 +53,11 @@ public class BoardManager : MonoBehaviour
             }
         }
         m_EmptyCellsList.Remove(new Vector2Int(1, 1));
+        
+        Vector2Int endCoord = new Vector2Int(Width - 2, Height - 2);
+        AddObject(Instantiate(ExitCellPrefab), endCoord);
+        m_EmptyCellsList.Remove(endCoord);
+        
         GenerateWall();
         GenerateFood();
     }
@@ -124,5 +130,27 @@ public class BoardManager : MonoBehaviour
     public Tile GetCelltile(Vector2Int cellIndex)
     {
         return m_Tilemap.GetTile<Tile>(new Vector3Int(cellIndex.x, cellIndex.y, 0));
+    }
+
+    public void Clear()
+    {
+        if (m_BoardData == null)
+        {
+            return;
+        }
+
+        for (int y = 0; y < Height; ++y)
+        {
+            for (int x = 0; x < Width; ++x)
+            {
+                var cellData = m_BoardData[x, y];
+
+                if (cellData.ContainedObject != null)
+                {
+                    Destroy(cellData.ContainedObject.gameObject);
+                }
+                SetCellTile(new Vector2Int(x, y), null);
+            }
+        }
     }
 }

@@ -275,7 +275,6 @@ MonoBehaviour:
   - {fileID: 4437054163236264991, guid: 9cbdae6ca7e524f4ab8228e5b2836c7a, type: 3}
   - {fileID: 1864863706947226687, guid: 9dda91222bba5824fb75dc24e275193c, type: 3}
   - {fileID: 6473211224942159847, guid: d0403f944778f5446b069c518e49c42f, type: 3}
-  ExitCellPrefab: {fileID: 7795086795932565705, guid: ba2b9b9c081eb824cbcd8d780de97f24, type: 3}
   Player: {fileID: 2047128601}
 --- !u!156049354 &1263079469
 Grid:
@@ -579,7 +578,6 @@ GameObject:
   - component: {fileID: 2047128600}
   - component: {fileID: 2047128599}
   - component: {fileID: 2047128601}
-  - component: {fileID: 2047128602}
   m_Layer: 0
   m_Name: PlayerCharacter
   m_TagString: Untagged
@@ -672,29 +670,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdff895621be6fda19063f2728792eef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  MoveSpeed: 7
---- !u!95 &2047128602
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2047128598}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 8ac66aaf08d00634e928d3722ce19369, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
