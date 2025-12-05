@@ -1,6 +1,8 @@
 using System;
 using DefaultNamespace;
+using DefaultNamespace.Interface;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
@@ -20,10 +22,12 @@ public class PlayerController : MonoBehaviour
     private bool m_IsMoving;
     private Vector3 m_MoveTarget;
     
-
+    public UnityEvent PlayerCheck;
+    
     public void Awake()
     {
         m_Animator = GetComponent<Animator>();
+       
     }
 
     public void Init()
@@ -34,6 +38,8 @@ public class PlayerController : MonoBehaviour
     {
         m_Board = boardManager;
         MoveTo(cell, true);
+        GameManager.Instance.TurnManager.OnTick += OnTurnHappen;
+        PlayerCheck.Invoke();
     }
 
     public void MoveTo(Vector2Int cell, bool immediate)
@@ -123,5 +129,10 @@ public class PlayerController : MonoBehaviour
     public void GameOver()
     {
         m_IsGameOver = true;
+    }
+
+    public void OnTurnHappen()
+    {
+        PlayerCheck?.Invoke();
     }
 }

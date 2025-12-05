@@ -52,6 +52,7 @@ public class GameManager : MonoBehaviour
     void OnTurnHappen()
     {
         ChangeFood(-1);
+        
     }
     
     public void ChangeFood(int amount)
@@ -90,4 +91,6 @@ public class GameManager : MonoBehaviour
         Player.Init();
         Player.Spawn(Board, new Vector2Int(1,1));
     }
+
+    
 }
