@@ -148,9 +148,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8168e885984190893b2047cfcba4c5ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  Board: {fileID: 1263079468}
-  Player: {fileID: 2047128601}
-  UIDoc: {fileID: 783348122}
+  board: {fileID: 1263079468}
+  player: {fileID: 2047128601}
+  uiDoc: {fileID: 783348122}
 --- !u!4 &586537615
 Transform:
   m_ObjectHideFlags: 0
@@ -253,8 +253,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoardManager
   baseSize: 8
   maxSize: 200
-  Width: 8
-  Height: 8
+  createOuterBorder: 1
+  borderThickness: 1
+  instantiateBorderWallObjects: 1
   GroundTiles:
   - {fileID: 11400000, guid: 229817289450d84878c383dc89403799, type: 2}
   - {fileID: 11400000, guid: b4ec4859fea8278fea095caae123b920, type: 2}
@@ -267,19 +268,9 @@ MonoBehaviour:
   WallTiles:
   - {fileID: 11400000, guid: 78888f8131239f17899e68ab51a5e21c, type: 2}
   - {fileID: 11400000, guid: 970d1e386a08bc9929f298798c59df99, type: 2}
-  FoodPrefabs:
-  - {fileID: 2957933106706698240, guid: 8a5fdbcbb8c6cd0b5aa53e287205a03c, type: 3}
-  - {fileID: 2442716675377147550, guid: f026020ada818d837af97cceacec5e0a, type: 3}
-  - {fileID: 2250400466519324533, guid: 5513c34d33badc8948ef24984e94ae3c, type: 3}
-  minFoodCount: 2
-  maxFoodCount: 6
-  WallPrefabs:
-  - {fileID: 4437054163236264991, guid: 9cbdae6ca7e524f4ab8228e5b2836c7a, type: 3}
-  - {fileID: 1864863706947226687, guid: 9dda91222bba5824fb75dc24e275193c, type: 3}
-  - {fileID: 6473211224942159847, guid: d0403f944778f5446b069c518e49c42f, type: 3}
   ExitCellPrefab: {fileID: 7795086795932565705, guid: ba2b9b9c081eb824cbcd8d780de97f24, type: 3}
-  EnemyPrefab: {fileID: 966211648892414310, guid: a232b54a16f42acbca1e75cf4a45d39f, type: 3}
   Player: {fileID: 2047128601}
+  Spawner: {fileID: 0}
 --- !u!156049354 &1263079469
 Grid:
   m_ObjectHideFlags: 0
@@ -522,7 +513,7 @@ Transform:
   m_GameObject: {fileID: 1917644049}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: 4, z: -10}
+  m_LocalPosition: {x: 5, y: 3, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -584,15 +575,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fb36425d4e6b96b89c21b27164ef811, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
-  mode: 1
-  board: {fileID: 1263079468}
   playerTransform: {fileID: 2047128600}
-  cam: {fileID: 1917644051}
+  confineCollider: {fileID: 0}
+  board: {fileID: 1263079468}
   tileSize: 1
-  paddingTiles: 1
-  minOrthoSize: 3
-  maxOrthoSize: 100
+  snapToGrid: 1
   followSmoothTime: 0.05
+  lookaheadTiles: 2
+  lookaheadSmoothing: 0.25
 --- !u!1 &2047128598
 GameObject:
   m_ObjectHideFlags: 0
