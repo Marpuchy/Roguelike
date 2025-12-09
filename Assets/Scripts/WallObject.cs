@@ -16,8 +16,8 @@ public class WallObject : CellObject
 
         m_HealthPoint = MaxHealth;
 
-        m_OriginalTile = GameManager.Instance.Board.GetCelltile(cell);
-        GameManager.Instance.Board.SetCellTile(cell, ObstacleTile);
+        m_OriginalTile = GameManager.Instance.board.GetCelltile(cell);
+        GameManager.Instance.board.SetCellTile(cell, ObstacleTile);
     }
 
     public override bool PlayerWantsToEnter()
@@ -28,12 +28,12 @@ public class WallObject : CellObject
         {
             if (m_HealthPoint == 1)
             {
-                GameManager.Instance.Board.SetCellTile(m_Cell, NearlyDestroyedTile);
+                GameManager.Instance.board.SetCellTile(m_Cell, NearlyDestroyedTile);
             }
             return false;
         }
         
-        GameManager.Instance.Board.SetCellTile(m_Cell, m_OriginalTile);
+        GameManager.Instance.board.SetCellTile(m_Cell, m_OriginalTile);
         Destroy(gameObject);
         return true;
     }

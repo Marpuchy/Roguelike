@@ -36,7 +36,7 @@ public class Enemy : CellObject
 
    bool MoveTo(Vector2Int coord)
    {
-       var board = GameManager.Instance.Board;
+       var board = GameManager.Instance.board;
        var targetCell =  board.CellData(coord);
 
       if (targetCell == null
@@ -61,7 +61,7 @@ public class Enemy : CellObject
    void TurnHappened()
    {
       //We added a public property that return the player current cell!
-      var playerCell = GameManager.Instance.Player.Cell;
+      var playerCell = GameManager.Instance.player.Cell;
 
       int xDist = playerCell.x - m_Cell.x;
       int yDist = playerCell.y - m_Cell.y;

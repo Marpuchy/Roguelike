@@ -10,7 +10,7 @@ namespace DefaultNamespace
         public override void Init(Vector2Int coord)
         {
             base.Init(coord);
-            GameManager.Instance.Board.SetCellTile(coord, EndTile);
+            GameManager.Instance.board.SetCellTile(coord, EndTile);
         }
 
         public override void PlayerEntered()
