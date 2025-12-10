@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -25,21 +26,22 @@ public class CameraController : MonoBehaviour
     [Tooltip("Lerp para suavizar el cambio de lookahead (0..1). 0 = snap instantáneo, 1 = sin smoothing extra")]
     [Range(0f, 1f)] public float lookaheadSmoothing = 0.25f;
 
-    Camera cam;
-    Vector3 velocity = Vector3.zero;
-    Vector2 lastMoveDir = Vector2.up; // dirección utilizada cuando el jugador está parado
-    Vector3 previousPlayerPos;
+    private Camera m_Cam;
+    private Vector3 m_Velocity = Vector3.zero;
+    private Vector2 m_LastMoveDir = Vector2.up; // dirección utilizada cuando el jugador está parado
+    private Vector3 m_PreviousPlayerPos;
 
+    [Obsolete("Obsolete")]
     void Awake()
     {
-        cam = GetComponent<Camera>();
+        m_Cam = GetComponent<Camera>();
         if (playerTransform == null)
         {
             var p = FindObjectOfType<PlayerController>();
             if (p != null) playerTransform = p.transform;
         }
         if (board == null) board = FindObjectOfType<BoardManager>();
-        previousPlayerPos = playerTransform != null ? playerTransform.position : Vector3.zero;
+        m_PreviousPlayerPos = playerTransform != null ? playerTransform.position : Vector3.zero;
     }
 
     void LateUpdate()
@@ -48,16 +50,16 @@ public class CameraController : MonoBehaviour
 
         // 1) calcular dirección de movimiento basada en delta posición del player
         Vector3 playerPos = playerTransform.position;
-        Vector3 delta = playerPos - previousPlayerPos;
+        Vector3 delta = playerPos - m_PreviousPlayerPos;
 
-        Vector2 moveDir = lastMoveDir;
+        Vector2 moveDir = m_LastMoveDir;
         if (delta.magnitude > 0.001f)
         {
             moveDir = new Vector2(delta.x, delta.y).normalized;
-            lastMoveDir = moveDir;
+            m_LastMoveDir = moveDir;
         }
 
-        previousPlayerPos = playerPos;
+        m_PreviousPlayerPos = playerPos;
 
         // 2) calcular objetivo con lookahead (en world units)
         Vector3 lookOffset = new Vector3(moveDir.x, moveDir.y, 0f) * (lookaheadTiles * tileSize);
@@ -93,8 +95,8 @@ public class CameraController : MonoBehaviour
         }
 
         // 4) calcular extents de la cámara
-        float vertExt = cam.orthographicSize;
-        float horzExt = cam.orthographicSize * ((float)Screen.width / Screen.height);
+        float vertExt = m_Cam.orthographicSize;
+        float horzExt = m_Cam.orthographicSize * ((float)Screen.width / Screen.height);
 
         // 5) expandir temporalmente bounds en la dirección del movimiento para permitir ver lookaheadTiles
         float extra = lookaheadTiles * tileSize;
@@ -122,7 +124,7 @@ public class CameraController : MonoBehaviour
         }
 
         // 6) Smooth follow hacia desiredWorld
-        Vector3 smoothPos = Vector3.SmoothDamp(transform.position, new Vector3(desiredWorld.x, desiredWorld.y, transform.position.z), ref velocity, followSmoothTime);
+        Vector3 smoothPos = Vector3.SmoothDamp(transform.position, new Vector3(desiredWorld.x, desiredWorld.y, transform.position.z), ref m_Velocity, followSmoothTime);
 
         // 7) Snap a grid si requerido
         if (snapToGrid && tileSize > 0f)

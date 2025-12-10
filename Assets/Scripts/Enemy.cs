@@ -47,12 +47,12 @@ public class Enemy : CellObject
       }
     
       //remove enemy from current cell
-      var currentCell = board.CellData(m_Cell);
+      var currentCell = board.CellData(MCell);
       currentCell.ContainedObject = null;
     
       //add it to the next cell
       targetCell.ContainedObject = this;
-      m_Cell = coord;
+      MCell = coord;
       transform.position = board.CellToWorld(coord);
 
       return true;
@@ -63,8 +63,8 @@ public class Enemy : CellObject
       //We added a public property that return the player current cell!
       var playerCell = GameManager.Instance.player.Cell;
 
-      int xDist = playerCell.x - m_Cell.x;
-      int yDist = playerCell.y - m_Cell.y;
+      int xDist = playerCell.x - MCell.x;
+      int yDist = playerCell.y - MCell.y;
 
       int absXDist = Mathf.Abs(xDist);
       int absYDist = Mathf.Abs(yDist);
@@ -103,11 +103,11 @@ public class Enemy : CellObject
       //player to our right
       if (xDist > 0)
       {
-          return MoveTo(m_Cell + Vector2Int.right);
+          return MoveTo(MCell + Vector2Int.right);
       }
     
       //player to our left
-      return MoveTo(m_Cell + Vector2Int.left);
+      return MoveTo(MCell + Vector2Int.left);
    }
 
    bool TryMoveInY(int yDist)
@@ -117,11 +117,11 @@ public class Enemy : CellObject
       //player on top
       if (yDist > 0)
       {
-          return MoveTo(m_Cell + Vector2Int.up);
+          return MoveTo(MCell + Vector2Int.up);
       }
 
       //player below
-      return MoveTo(m_Cell + Vector2Int.down);
+      return MoveTo(MCell + Vector2Int.down);
    }
 }
 

@@ -228,10 +228,28 @@ public class SimpleSpawner : MonoBehaviour
     {
         var gm = GameManager.Instance;
         if (gm == null) return 1;
-        var field = gm.GetType().GetField("m_CurrentLevel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (field != null) return (int)field.GetValue(gm);
+
+        // 1) intenta usar la propiedad pública CurrentLevel (más robusta)
         var prop = gm.GetType().GetProperty("CurrentLevel");
-        if (prop != null) return (int)prop.GetValue(gm);
+        if (prop != null)
+        {
+            int val = (int)prop.GetValue(gm);
+            Debug.Log($"[SimpleSpawner] GetCurrentLevel() via property -> {val}");
+            return val;
+        }
+
+        // 2) fallback: intenta leer campo privado m_CurrentLevel (retrocompatibilidad)
+        var field = gm.GetType().GetField("m_CurrentLevel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (field != null)
+        {
+            int val = (int)field.GetValue(gm);
+            Debug.Log($"[SimpleSpawner] GetCurrentLevel() via field -> {val}");
+            return val;
+        }
+
+        // default
+        Debug.Log("[SimpleSpawner] GetCurrentLevel() fallback -> 1");
         return 1;
     }
+
 }

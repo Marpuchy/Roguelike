@@ -252,10 +252,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardManager
   baseSize: 8
-  maxSize: 200
-  createOuterBorder: 1
-  borderThickness: 1
-  instantiateBorderWallObjects: 1
+  maxSize: 256
   GroundTiles:
   - {fileID: 11400000, guid: 229817289450d84878c383dc89403799, type: 2}
   - {fileID: 11400000, guid: b4ec4859fea8278fea095caae123b920, type: 2}
@@ -269,8 +266,46 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 78888f8131239f17899e68ab51a5e21c, type: 2}
   - {fileID: 11400000, guid: 970d1e386a08bc9929f298798c59df99, type: 2}
   ExitCellPrefab: {fileID: 7795086795932565705, guid: ba2b9b9c081eb824cbcd8d780de97f24, type: 3}
+  spawnFood:
+    mode: 2
+    prefabs:
+    - {fileID: 2957933106706698240, guid: 8a5fdbcbb8c6cd0b5aa53e287205a03c, type: 3}
+    - {fileID: 2442716675377147550, guid: f026020ada818d837af97cceacec5e0a, type: 3}
+    - {fileID: 2250400466519324533, guid: 5513c34d33badc8948ef24984e94ae3c, type: 3}
+    minCount: 5
+    maxCount: 100
+    cellsPer: 40
+    levelMultiplier: 0.5
+    baseCount: 1
+    roundUp: 1
+    maxCap: 0
+  spawnWalls:
+    mode: 2
+    prefabs:
+    - {fileID: 4437054163236264991, guid: 9cbdae6ca7e524f4ab8228e5b2836c7a, type: 3}
+    - {fileID: 1864863706947226687, guid: 9dda91222bba5824fb75dc24e275193c, type: 3}
+    - {fileID: 6473211224942159847, guid: d0403f944778f5446b069c518e49c42f, type: 3}
+    baseMin: 6
+    baseMax: 10
+    cellsPer: 6
+    levelMultiplier: 0.5
+    baseCount: 1
+    roundUp: 1
+    maxCap: 0
+  spawnEnemies:
+    mode: 2
+    prefab: {fileID: 966211648892414310, guid: a232b54a16f42acbca1e75cf4a45d39f, type: 3}
+    randomMin: 1
+    randomMax: 100
+    cellsPer: 100
+    levelMultiplier: 0.2
+    baseCount: 1
+    roundUp: 0
+    maxCap: 0
+  SpawnerPrefab: {fileID: 0}
   Player: {fileID: 2047128601}
-  Spawner: {fileID: 0}
+  forceProceduralForAll: 0
+  logSpawnSummary: 0
 --- !u!156049354 &1263079469
 Grid:
   m_ObjectHideFlags: 0

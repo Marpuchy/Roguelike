@@ -1,42 +1,48 @@
+using System;
 using System.Collections.Generic;
 using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
+using Random = UnityEngine.Random;
 
 /// <summary>
-/// BoardManager compatible:
-/// - InitLevel(level) interpreta baseSize + (level-1) como total visible (si createOuterBorder true, interior = total - 2*borderThickness)
-/// - Crea interior jugable (Width x Height), coloca Player en (0,0) y Exit en (Width-1, Height-1)
-/// - Busca/crea SimpleSpawner (Roguelike.Spawning.SimpleSpawner), copia configs desde el Inspector y llama SpawnAll(...)
-/// - Mantiene firmas públicas previas para compatibilidad con otros scripts
+/// BoardManager (nuevo):
+/// - Usa SimpleSpawner para spawns.
+/// - Expone Width/Height públicos (necesario para otros componentes).
+/// - Incluye logs de depuración y fallbacks para asegurar que los prefabs lleguen al SimpleSpawner.
+/// - Crea automáticamente un SimpleSpawner en runtime si no hay ninguno y no se ha asignado SpawnerPrefab.
+/// - Opcional: forzar procedural temporalmente para pruebas.
 /// </summary>
 public class BoardManager : MonoBehaviour
 {
     [Header("Tamaño")]
-    public int baseSize = 8;    // total visible size for level 1
+    public int baseSize = 8;
     public int maxSize = 200;
 
-    [Header("Border (visual)")]
-    public bool createOuterBorder = true;
-    [Range(1, 5)] public int borderThickness = 1;
-    public bool instantiateBorderWallObjects = false;
+    // Exponer Width/Height públicamente (lectura externa)
+    public int Width { get; private set; }
+    public int Height { get; private set; }
 
-    [Header("Tiles / Prefabs")]
-    public Tile[] GroundTiles;
-    public Tile[] WallTiles; // solo para border visual (tile)
-    public ExitCellObject ExitCellPrefab;
+    [FormerlySerializedAs("GroundTiles")] [Header("Tiles (visual)")]
+    public Tile[] groundTiles;
+    [FormerlySerializedAs("WallTiles")] public Tile[] wallTiles; // para el borde visual
+    [FormerlySerializedAs("ExitCellPrefab")] public ExitCellObject exitCellPrefab;
 
-    [Header("Spawner configs (edítalas aquí)")]
+    [Header("Spawner (nuevo)")]
     public SimpleSpawner.FoodConfig spawnFood = new SimpleSpawner.FoodConfig();
     public SimpleSpawner.WallConfig spawnWalls = new SimpleSpawner.WallConfig();
     public SimpleSpawner.EnemyConfig spawnEnemies = new SimpleSpawner.EnemyConfig();
+    [FormerlySerializedAs("SpawnerPrefab")] public SimpleSpawner spawnerPrefab; // opcional: prefab con configuraciones ya asignadas
 
-    [Header("Player (opcional - si no está asignado se buscará en la escena)")]
-    public PlayerController Player; // no cambiaremos PlayerController; solo llamamos Player.Spawn(...)
+    [FormerlySerializedAs("Player")] [Header("Opcional / Player")]
+    public PlayerController player;
 
-    // Public read-only interior logical size
-    public int Width { get; private set; }
-    public int Height { get; private set; }
+    [Header("Debug / testing")]
+    [Tooltip("Si true, fuerza el modo Procedural en food/walls/enemies antes de SpawnAll (temporal para pruebas).")]
+    public bool forceProceduralForAll = false;
+    [Tooltip("Si true, imprime un pequeño resumen después de SpawnAll.")]
+    public bool logSpawnSummary = false;
 
     // internals
     Tilemap m_Tilemap;
@@ -45,122 +51,198 @@ public class BoardManager : MonoBehaviour
     List<Vector2Int> m_EmptyCellsList;
     List<GameObject> m_BorderObjects;
 
-    // runtime spawner (namespaced)
+    // runtime spawner
     SimpleSpawner m_Spawner;
 
+    [Obsolete("Obsolete")]
     void Awake()
     {
         if (m_Tilemap == null) m_Tilemap = GetComponentInChildren<Tilemap>();
         if (m_Grid == null) m_Grid = GetComponentInChildren<Grid>();
 
-        // intentar obtener player automáticamente si no asignado en el inspector
-        if (Player == null)
+        // Intentar encontrar SimpleSpawner ya configurado en la escena
+        m_Spawner = FindObjectOfType<SimpleSpawner>();
+        if (m_Spawner == null)
         {
-            Player = FindObjectOfType<PlayerController>();
+            var goByName = GameObject.Find("SimpleSpawner");
+            if (goByName != null) m_Spawner = goByName.GetComponent<SimpleSpawner>();
         }
 
-        // encontrar o crear SimpleSpawner namespaced automáticamente
-        m_Spawner = FindObjectOfType<SimpleSpawner>();
+        // Si no hay y tenemos un prefab, instanciamos
+        if (m_Spawner == null && spawnerPrefab != null)
+        {
+            GameObject go = Instantiate(spawnerPrefab.gameObject);
+            go.name = "SimpleSpawner";
+            m_Spawner = go.GetComponent<SimpleSpawner>();
+            Debug.Log("[BoardManager] SimpleSpawner instanciado desde SpawnerPrefab.");
+        }
+
+        // --- NUEVO: si aún no hay spawner, creamos uno *y copiamos las configuraciones desde BoardManager* ---
         if (m_Spawner == null)
         {
             GameObject go = new GameObject("SimpleSpawner");
             m_Spawner = go.AddComponent<SimpleSpawner>();
-            Debug.Log("[BoardManager] SimpleSpawner creado automáticamente.");
+            Debug.Log("[BoardManager] Created runtime SimpleSpawner (auto).");
+
+            // Copiar configuraciones inspector -> runtime spawner (fallback)
+            try
+            {
+                // Copy whole configs (struct/class assignment) when possible
+                // This will copy prefabs arrays and other fields inside the config structs/classes
+                m_Spawner.food = spawnFood;
+                m_Spawner.walls = spawnWalls;
+                m_Spawner.enemies = spawnEnemies;
+
+                Debug.Log("[BoardManager] Copied spawnFood/spawnWalls/spawnEnemies to runtime SimpleSpawner.");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("[BoardManager] Exception copying spawner configs: " + ex.Message);
+            }
+        }
+
+        // Ahora m_Spawner siempre será null *solo* si algo ha ido muy mal; avisamos en consola
+        if (m_Spawner == null)
+        {
+            Debug.LogWarning("[BoardManager] No se encontró SimpleSpawner en escena ni SpawnerPrefab asignado, y no se pudo crear uno en runtime. No se spawneará nada.");
         }
     }
 
-    // Backwards-compatible Init()
+    // ----------------- API pública -----------------
     public void Init() => InitLevel(1);
 
     /// <summary>
-    /// Interpreta totalSize = baseSize + (level-1) como tamaño TOTAL visible.
-    /// Si createOuterBorder = true, interiorSize = totalSize - 2*borderThickness.
+    /// InitLevel: baseSize + (level-1) => tamaño total visible. Interior = totalSize
     /// </summary>
     public void InitLevel(int level)
     {
+        Debug.Log($"[BoardManager] InitLevel called with level={level} (baseSize={baseSize}, maxSize={maxSize})");
         int totalSize = baseSize + Mathf.Max(0, level - 1);
         totalSize = Mathf.Clamp(totalSize, 3, maxSize);
-
-        int interiorSize = createOuterBorder ? totalSize - 2 * borderThickness : totalSize;
-        interiorSize = Mathf.Clamp(interiorSize, 3, totalSize);
-
-        Init(interiorSize, interiorSize);
+        Init(totalSize, totalSize);
     }
 
-    /// <summary>
-    /// Inicializa el tablero interior lógico Width x Height
-    /// </summary>
+    [Obsolete("Obsolete")]
     public void Init(int width, int height)
     {
-        Width = Mathf.Clamp(width, 3, maxSize);
-        Height = Mathf.Clamp(height, 3, maxSize);
+        width = Mathf.Clamp(width, 3, maxSize);
+        height = Mathf.Clamp(height, 3, maxSize);
 
         if (m_Tilemap == null) m_Tilemap = GetComponentInChildren<Tilemap>();
         if (m_Grid == null) m_Grid = GetComponentInChildren<Grid>();
 
+        // limpiamos anteriores
         ClearInternal();
+
+        // asignar propiedades públicas para que otros scripts las lean
+        Width = width;
+        Height = height;
+        Debug.Log($"[BoardManager] Init width={Width}, height={Height}");
 
         m_BoardData = new CellData[Width, Height];
         m_EmptyCellsList = new List<Vector2Int>();
         m_BorderObjects = new List<GameObject>();
 
-        // Fill interior with ground tiles and collect empty cells
+        // rellenar tiles y marcar celdas vacías
         for (int y = 0; y < Height; y++)
         {
             for (int x = 0; x < Width; x++)
             {
-                m_BoardData[x, y] = new CellData { Passable = true };
-                m_EmptyCellsList.Add(new Vector2Int(x, y));
+                Tile tile = null;
+                m_BoardData[x, y] = new CellData();
 
-                Tile ground = (GroundTiles != null && GroundTiles.Length > 0) ? GroundTiles[Random.Range(0, GroundTiles.Length)] : null;
-                if (m_Tilemap != null) m_Tilemap.SetTile(new Vector3Int(x, y, 0), ground);
+                bool isBorder = (x == 0 || y == 0 || x == Width - 1 || y == Height - 1);
+                if (isBorder)
+                {
+                    if (wallTiles != null && wallTiles.Length > 0)
+                        tile = wallTiles[Random.Range(0, wallTiles.Length)];
+                    m_BoardData[x, y].Passable = false;
+                }
+                else
+                {
+                    if (groundTiles != null && groundTiles.Length > 0)
+                        tile = groundTiles[Random.Range(0, groundTiles.Length)];
+                    m_BoardData[x, y].Passable = true;
+                    m_EmptyCellsList.Add(new Vector2Int(x, y));
+                }
+
+                if (m_Tilemap != null) m_Tilemap.SetTile(new Vector3Int(x, y, 0), tile);
             }
         }
 
-        // Player bottom-left (0,0) -- mantenemos la llamada original a Player.Spawn(...)
-        Vector2Int playerPos = new Vector2Int(0, 0);
-        if (Player == null) Player = FindObjectOfType<PlayerController>();
-        if (Player != null)
+        // reservar y colocar player en (1,1) si existe
+        Vector2Int playerPos = new Vector2Int(1, 1);
+        if (m_EmptyCellsList.Contains(playerPos)) m_EmptyCellsList.Remove(playerPos);
+        if (player == null) player = FindObjectOfType<PlayerController>();
+        if (player != null)
         {
-            if (m_EmptyCellsList.Contains(playerPos)) m_EmptyCellsList.Remove(playerPos);
-            // NO MODIFICAMOS PlayerController; solo llamamos la firma que ya existía
-            Player.Spawn(this, playerPos);
+            player.Spawn(this, playerPos);
         }
 
-        // Exit top-right (Width-1, Height-1)
-        Vector2Int exitPos = new Vector2Int(Width - 1, Height - 1);
+        // colocar exit en Width-2,Height-2 (si hay prefab)
+        Vector2Int exitPos = new Vector2Int(Width - 2, Height - 2);
         if (m_EmptyCellsList.Contains(exitPos)) m_EmptyCellsList.Remove(exitPos);
-        if (ExitCellPrefab != null) AddObject(Instantiate(ExitCellPrefab), exitPos);
-
-        // Border visual (dibujado fuera del interior lógico)
-        if (createOuterBorder)
+        if (exitCellPrefab != null)
         {
-            Tile wallTile = (WallTiles != null && WallTiles.Length > 0) ? WallTiles[0] : null;
-            GameObject wallPrefab = (instantiateBorderWallObjects && m_Spawner != null && m_Spawner.WallPrefabs != null && m_Spawner.WallPrefabs.Length > 0) ? m_Spawner.WallPrefabs[0].gameObject : null;
-            BorderSpawner.CreateOuterBorder(m_Tilemap, wallTile, Width, Height, borderThickness, wallPrefab, this.transform);
+            AddObject(Instantiate(exitCellPrefab), exitPos);
         }
 
-        // PASAR configs editadas en este BoardManager al SimpleSpawner (copy-by-value)
+        // Pasar configuraciones al SimpleSpawner (si existe) y delegar spawn
         if (m_Spawner != null)
         {
+            // copia por valor las configs inspectorales
             m_Spawner.food = spawnFood;
             m_Spawner.walls = spawnWalls;
             m_Spawner.enemies = spawnEnemies;
-        }
 
-        // Delegar spawn al SimpleSpawner (consume m_EmptyCellsList)
-        if (m_Spawner != null)
-        {
+            // Fallbacks: asegurar que las referencias a prefabs estén presentes en el spawner runtime
+            if ((m_Spawner.food.prefabs == null || m_Spawner.food.prefabs.Length == 0) && (spawnFood.prefabs != null && spawnFood.prefabs.Length > 0))
+            {
+                m_Spawner.food.prefabs = spawnFood.prefabs;
+                Debug.Log("[BoardManager] Fallback: copied spawnFood.prefabs to m_Spawner.food.prefabs");
+            }
+            if ((m_Spawner.walls.prefabs == null || m_Spawner.walls.prefabs.Length == 0) && (spawnWalls.prefabs != null && spawnWalls.prefabs.Length > 0))
+            {
+                m_Spawner.walls.prefabs = spawnWalls.prefabs;
+                Debug.Log("[BoardManager] Fallback: copied spawnWalls.prefabs to m_Spawner.walls.prefabs");
+            }
+            if (m_Spawner.enemies.prefab == null && spawnEnemies.prefab != null)
+            {
+                m_Spawner.enemies.prefab = spawnEnemies.prefab;
+                Debug.Log("[BoardManager] Fallback: copied spawnEnemies.prefab to m_Spawner.enemies.prefab");
+            }
+
+            // Opcional: forzar procedural para pruebas rápidas
+            if (forceProceduralForAll)
+            {
+                m_Spawner.food.mode = SimpleSpawner.SpawnMode.Procedural;
+                m_Spawner.walls.mode = SimpleSpawner.SpawnMode.Procedural;
+                m_Spawner.enemies.mode = SimpleSpawner.SpawnMode.Procedural;
+                Debug.Log("[BoardManager] forceProceduralForAll=true -> forced Procedural mode for all spawns (temporary).");
+            }
+
+            // DEBUG: imprimir estado antes de SpawnAll
+            int emptyCount = (m_EmptyCellsList == null) ? 0 : m_EmptyCellsList.Count;
+            int foodPrefabs = (m_Spawner.food.prefabs == null) ? 0 : m_Spawner.food.prefabs.Length;
+            int wallPrefabs = (m_Spawner.walls.prefabs == null) ? 0 : m_Spawner.walls.prefabs.Length;
+            int enemyPref = (m_Spawner.enemies.prefab == null) ? 0 : 1;
+
+            Debug.Log($"[BoardManager] About to SpawnAll: emptyCells={emptyCount}, foodPrefabs={foodPrefabs}, wallPrefabs={wallPrefabs}, enemyPrefab={(enemyPref==1?"yes":"no")}, food.mode={m_Spawner.food.mode}, walls.mode={m_Spawner.walls.mode}, enemies.mode={m_Spawner.enemies.mode}");
+
             m_Spawner.SpawnAll(m_EmptyCellsList, this);
+
+            if (logSpawnSummary)
+            {
+                Debug.Log("[BoardManager] SpawnAll executed. (enable verbose logs in SimpleSpawner for counts).");
+            }
         }
         else
         {
-            Debug.LogWarning("[BoardManager] No SimpleSpawner disponible - no se spawneará nada.");
+            Debug.LogWarning("[BoardManager] No SimpleSpawner configurado: no se spawnearán objetos (añade un SimpleSpawner en escena o asigna SpawnerPrefab).");
         }
     }
 
-    // ----------------- API helpers (compatibles) -----------------
-
+    // ----------------- Helpers / API -----------------
     public Vector3 CellToWorld(Vector2Int cellIndex)
     {
         if (m_Grid == null) m_Grid = GetComponentInChildren<Grid>();
@@ -169,13 +251,14 @@ public class BoardManager : MonoBehaviour
 
     public CellData CellData(Vector2Int cellIndex)
     {
+        if (m_BoardData == null) return null;
         if (cellIndex.x < 0 || cellIndex.x >= Width || cellIndex.y < 0 || cellIndex.y >= Height) return null;
         return m_BoardData[cellIndex.x, cellIndex.y];
     }
 
-    // Firma idéntica: AddObject(CellObject, Vector2Int)
     public void AddObject(CellObject obj, Vector2Int coord)
     {
+        if (m_BoardData == null) return;
         if (coord.x < 0 || coord.x >= Width || coord.y < 0 || coord.y >= Height) return;
         CellData data = m_BoardData[coord.x, coord.y];
         if (data == null) return;
@@ -198,8 +281,6 @@ public class BoardManager : MonoBehaviour
     }
 
     // ----------------- Clear / cleanup -----------------
-
-    // Public Clear: destruye objetos lógicos y limpia tiles interiores
     public void Clear()
     {
         if (m_BoardData == null) return;
@@ -219,15 +300,13 @@ public class BoardManager : MonoBehaviour
 
         m_BoardData = null;
         if (m_EmptyCellsList != null) m_EmptyCellsList.Clear();
+        if (m_BorderObjects != null) m_BorderObjects.Clear();
 
-        if (m_BorderObjects != null)
-        {
-            foreach (var go in m_BorderObjects) if (go != null) Destroy(go);
-            m_BorderObjects.Clear();
-        }
+        // Reset Width/Height a 0 para detectar lecturas prematuras
+        Width = 0;
+        Height = 0;
     }
 
-    // Limpieza interna previa a Init (no destruye tilemap children externos)
     void ClearInternal()
     {
         // destruir objetos lógicos previos
@@ -246,10 +325,11 @@ public class BoardManager : MonoBehaviour
         // limpiar tiles interiores previos si existían
         if (m_Tilemap != null)
         {
-            // usamos Width/Height actuales (si existían)
-            for (int y = 0; y < Height; y++)
+            int w = (m_BoardData != null) ? m_BoardData.GetLength(0) : 0;
+            int h = (m_BoardData != null) ? m_BoardData.GetLength(1) : 0;
+            for (int y = 0; y < h; y++)
             {
-                for (int x = 0; x < Width; x++)
+                for (int x = 0; x < w; x++)
                 {
                     m_Tilemap.SetTile(new Vector3Int(x, y, 0), null);
                 }
@@ -262,5 +342,8 @@ public class BoardManager : MonoBehaviour
             foreach (var bo in m_BorderObjects) if (bo != null) Destroy(bo);
             m_BorderObjects.Clear();
         }
+
+        m_BoardData = null;
+        if (m_EmptyCellsList != null) m_EmptyCellsList.Clear();
     }
 }

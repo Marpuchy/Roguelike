@@ -28,12 +28,12 @@ public class WallObject : CellObject
         {
             if (m_HealthPoint == 1)
             {
-                GameManager.Instance.board.SetCellTile(m_Cell, NearlyDestroyedTile);
+                GameManager.Instance.board.SetCellTile(MCell, NearlyDestroyedTile);
             }
             return false;
         }
         
-        GameManager.Instance.board.SetCellTile(m_Cell, m_OriginalTile);
+        GameManager.Instance.board.SetCellTile(MCell, m_OriginalTile);
         Destroy(gameObject);
         return true;
     }

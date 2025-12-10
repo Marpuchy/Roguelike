@@ -1,10 +1,5 @@
-using UnityEngine;
-
-namespace DefaultNamespace
+public class CellData
 {
-    public class CellData
-    {
-        public bool Passable;
-        public CellObject ContainedObject;
-    }
+    public bool Passable;
+    public CellObject ContainedObject;
 }
