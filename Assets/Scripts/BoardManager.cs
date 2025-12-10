@@ -111,7 +111,7 @@ public class BoardManager : MonoBehaviour
 
     void GenerateEnemy()
     {
-        int enemyCount = Random.Range(2, 5);
+        int enemyCount = Random.Range(1, 3);
         for (int i = 0; i < enemyCount; ++i)
         {
             int randomIndex = Random.Range(0, m_EmptyCellsList.Count);
