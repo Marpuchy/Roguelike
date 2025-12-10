@@ -15,7 +15,6 @@ public class PlayerController : MonoBehaviour
     public Vector2Int Cell;
 
     private InputAction m_InputAction;
-    private InputAction m_RestartAction;
 
     private bool m_IsGameOver;
     private Animator m_Animator;
@@ -62,7 +61,6 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         m_InputAction = InputSystem.actions.FindAction("Move");
-        m_RestartAction = InputSystem.actions.FindAction("Restart");
     }
 
     // Update is called once per frame
@@ -70,7 +68,7 @@ public class PlayerController : MonoBehaviour
     {
         if (m_IsGameOver)
         {
-            if (m_RestartAction.WasPressedThisFrame())
+            if (Input.GetKeyDown(KeyCode.Return))
             {
                 GameManager.Instance.StartNewGame();
             }
