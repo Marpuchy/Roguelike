@@ -7,7 +7,7 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour
 {
     public int baseSize = 8;
-    public int maxSize = 200;
+    public int maxSize = 255;
 
     // devuelve width,height (square) calculados para el nivel
     public Vector2Int GetSizeForLevel(int level)
